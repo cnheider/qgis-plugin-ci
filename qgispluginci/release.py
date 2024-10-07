@@ -251,13 +251,13 @@ def create_archive(
   if asset_paths:
     with tarfile.open(top_tar_file, mode="a") as top_tar:
       for asset_path in asset_paths:
-        top_tar.add(asset_path, Path(parameters.plugin_path) / asset_path)
+        top_tar.add(asset_path)
 
   # converting to ZIP
   # why using TAR before? because it provides the prefix and makes things easier
   with zipfile.ZipFile(
       file=archive_name, mode="w", compression=zipfile.ZIP_DEFLATED
-      ) as zf:
+      ) as zip_file:
     # adding the content of TAR archive
     with tarfile.open(top_tar_file, mode="r:") as top_tar:
       for sub_tar_member in top_tar.getmembers():
@@ -265,15 +265,16 @@ def create_archive(
           continue
 
         f = top_tar.extractfile(sub_tar_member)
-        fl = f.read()
-        fn = sub_tar_member.name
+        file_data = f.read()
+        file_name = sub_tar_member.name
+
         # Get permissions and add it to ZipInfo
-        sub_tar = os.stat(fn)
+        sub_tar = os.stat(file_name)
 
         # fix directory structure if plugin path is not top level
         # or if the plugin source directory is not distinctive (src, plugin, etc.)
         # e.g. plugin/some_dir/metadata.txt => my_plugin/metadata.txt
-        fixed_path = fn.replace(
+        fixed_path = file_name.replace(
             parameters.plugin_path, parameters.plugin_zip_directory
             )
         info = zipfile.ZipInfo(fixed_path)
@@ -284,16 +285,16 @@ def create_archive(
         # see https://stackoverflow.com/questions/434641/how-do-i-set-permissions-attributes-on-a-file-in-a
         # -zip-file-using-pythons-zip/53008127#53008127
         info.external_attr = (sub_tar[0] & 0xFFFF) << 16  # Unix attributes
-        info.compress_type = zf.compression
-        zf.writestr(info, fl)
+        info.compress_type = zip_file.compression
+        zip_file.writestr(info, file_data)
 
   if parent_folder_license_copied:
     Path(f"{parameters.plugin_path}/LICENSE").unlink()
 
   logger.debug("-" * 40)
   logger.debug(f"Files in ZIP archive ({archive_name}):")
-  with zipfile.ZipFile(file=archive_name, mode="r") as zf:
-    for f in zf.namelist():
+  with zipfile.ZipFile(file=archive_name, mode="r") as zip_file:
+    for f in zip_file.namelist():
       logger.debug(f)
 
   logger.debug("-" * 40)
