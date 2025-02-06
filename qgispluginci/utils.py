@@ -1,5 +1,6 @@
 import logging
 import os
+import pathlib
 import re
 from math import floor, log as math_log, pow
 from typing import Union
@@ -9,7 +10,7 @@ from qgispluginci.version_note import VersionNote
 # GLOBALS
 logger = logging.getLogger(__name__)
 
-def replace_in_file(file_path: str, pattern, new: str, encoding: str = "utf8"):
+def replace_in_file(file_path: str, pattern, new: str, encoding: str = "utf8") -> None:
   try:
     with open(file_path, encoding=encoding) as f:
       content = f.read()
@@ -19,7 +20,7 @@ def replace_in_file(file_path: str, pattern, new: str, encoding: str = "utf8"):
   except UnicodeDecodeError as e:
     logger.warning(f'{file_path}:{e}')
 
-def configure_file(source_file: str, dest_file: str, replace: dict):
+def configure_file(source_file: str, dest_file: str, replace: dict) -> None:
   with open(source_file, encoding="utf-8") as f:
     content = f.read()
   for pattern, new in replace.items():
@@ -51,7 +52,7 @@ def convert_octets(octets: int) -> str:
 
   return f"{s} {size_name[i]}"
 
-def touch_file(path, update_time: bool = False, create_dir: bool = True):
+def touch_file(path: pathlib.Path, update_time: bool = False, create_dir: bool = True) -> None:
   basedir = os.path.dirname(path)
   if create_dir and not os.path.exists(basedir):
     os.makedirs(basedir)
